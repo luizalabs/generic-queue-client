@@ -39,11 +39,11 @@ public class Queue {
 
 	}
 
-	public static void main(String[] args) {
-		List<String> hosts = new ArrayList<String>();
-		hosts.add("127.0.0.1");
-		GenericQueue x = Queue.getInstance(QueueType.BEANSTALKD, "127.0.0.1:11300", null, null, "myqueue");
-		x.put(hosts);
-	}
+//	public static void main(String[] args) {
+//		List<String> hosts = new ArrayList<String>();
+//		hosts.add("127.0.0.1");
+//		GenericQueue x = Queue.getInstance(QueueType.BEANSTALKD, "127.0.0.1:11300", null, null, "myqueue");
+//		x.put(hosts);
+//	}
 
 }
