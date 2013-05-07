@@ -1,8 +1,5 @@
 package br.com.mcmweb.tools.queue.adapters;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import br.com.mcmweb.tools.queue.messages.MessageResponse;
 
 import com.surftools.BeanstalkClient.Job;
@@ -10,6 +7,7 @@ import com.surftools.BeanstalkClientImpl.ClientImpl;
 
 public class Beanstalk extends GenericQueue {
 
+	private static final int DEFAULT_PRIORITY = 2048;
 	private ClientImpl beanstalk;
 
 	public Beanstalk(String host, String login, String password, String tubeName) throws Exception {
@@ -28,18 +26,18 @@ public class Beanstalk extends GenericQueue {
 	@Override
 	public String put(Object object) {
 		// TODO conf or parameter
-		long id = this.beanstalk.put(2048, 0, 240, this.serializeMessageBody(object).getBytes());
+		long id = this.beanstalk.put(DEFAULT_PRIORITY, 0, 240, this.serializeMessageBody(object).getBytes());
 		return Long.toHexString(id);
 	}
 
-//	@Override
-//	public List<String> put(List<Object> objectList) {
-//		List<String> status = new ArrayList<String>();
-//		for (Object object : objectList) {
-//			status.add(this.put(object));
-//		}
-//		return status;
-//	}
+	// @Override
+	// public List<String> put(List<Object> objectList) {
+	// List<String> status = new ArrayList<String>();
+	// for (Object object : objectList) {
+	// status.add(this.put(object));
+	// }
+	// return status;
+	// }
 
 	@Override
 	public MessageResponse getNext() {
@@ -59,14 +57,22 @@ public class Beanstalk extends GenericQueue {
 		return this.beanstalk.delete(Long.parseLong(message.getHandle()));
 	}
 
-//	@Override
-//	public List<Boolean> delete(List<MessageResponse> messageList) {
-//		List<Boolean> status = new ArrayList<Boolean>();
-//		for (MessageResponse message : messageList) {
-//			status.add(this.delete(message));
-//		}
-//		return status;
-//	}
+	// @Override
+	// public List<Boolean> delete(List<MessageResponse> messageList) {
+	// List<Boolean> status = new ArrayList<Boolean>();
+	// for (MessageResponse message : messageList) {
+	// status.add(this.delete(message));
+	// }
+	// return status;
+	// }
+
+	@Override
+	public Boolean release(MessageResponse message, Integer delaySeconds) {
+		if (delaySeconds == null) {
+			delaySeconds = 0;
+		}
+		return this.beanstalk.release(Long.parseLong(message.getHandle()), DEFAULT_PRIORITY, delaySeconds);
+	}
 
 	@Override
 	public void close() {

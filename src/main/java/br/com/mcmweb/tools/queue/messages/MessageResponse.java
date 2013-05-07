@@ -4,7 +4,7 @@ public class MessageResponse {
 
 	protected String id;
 	protected String handle;
-	protected Integer receivedCount;
+	protected Integer receivedCount; // FIXME :(
 	protected String type;
 	protected Object object;
 
