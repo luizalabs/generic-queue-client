@@ -1,5 +1,7 @@
 package br.com.mcmweb.tools.queue.adapters;
 
+import java.util.Map;
+
 import br.com.mcmweb.tools.queue.messages.MessageResponse;
 
 import com.surftools.BeanstalkClient.Job;
@@ -26,7 +28,7 @@ public class Beanstalk extends GenericQueue {
 	@Override
 	public String put(Object object) {
 		// TODO conf or parameter
-		long id = this.beanstalk.put(DEFAULT_PRIORITY, 0, 240, this.serializeMessageBody(object).getBytes());
+		long id = this.beanstalk.put(DEFAULT_PRIORITY, 0, 300, this.serializeMessageBody(object).getBytes());
 		return Long.toHexString(id);
 	}
 
@@ -34,9 +36,19 @@ public class Beanstalk extends GenericQueue {
 	public MessageResponse getNext() {
 		Job job = this.beanstalk.reserve(20); // TODO config
 		if (job != null) {
+//			System.out.println(this.beanstalk.statsJob(job.getJobId()));
 			String id = Long.toHexString(job.getJobId());
 			String handle = Long.toString(job.getJobId());
-			int receivedCount = 0;
+			
+			Map<String, String> stats = this.beanstalk.statsJob(job.getJobId());
+			
+			Integer receivedCount = null;
+			try {
+				receivedCount = Integer.parseInt(stats.get("reserves")) - 1;
+			} catch (Exception e) {
+				// TODO log warning
+			}
+			
 			MessageResponse response = this.unserializeMessageBody(id, handle, receivedCount, new String(job.getData()));
 			return response;
 		}

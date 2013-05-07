@@ -28,18 +28,56 @@ public abstract class GenericQueue {
 		this.mapper.setSerializationInclusion(Inclusion.NON_EMPTY);
 	}
 
+	/**
+	 * Connect to queue
+	 * 
+	 * @throws Exception
+	 */
 	public abstract void connect() throws Exception;
 
+	/**
+	 * Add message to queue
+	 * 
+	 * @param object
+	 * @return
+	 */
 	public abstract String put(Object object);
 
+	/**
+	 * Remove message from queue
+	 * 
+	 * @param response
+	 * @return
+	 */
 	public abstract Boolean delete(MessageResponse response);
 
+	/**
+	 * Release message back to queue, in delaySeconds
+	 * 
+	 * @param response
+	 * @param delaySeconds
+	 * @return
+	 */
 	public abstract Boolean release(MessageResponse response, Integer delaySeconds);
-	
+
+	/**
+	 * Touch queue message to avoid timeouts
+	 * 
+	 * @param response
+	 * @return
+	 */
 	public abstract Boolean touch(MessageResponse response);
 
+	/**
+	 * Retrieve next queued message
+	 * 
+	 * @return
+	 */
 	public abstract MessageResponse getNext();
 
+	/**
+	 * Close queue connection
+	 */
 	public abstract void close();
 
 	public String getHost() {
