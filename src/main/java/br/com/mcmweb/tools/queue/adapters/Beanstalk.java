@@ -75,6 +75,11 @@ public class Beanstalk extends GenericQueue {
 	}
 
 	@Override
+	public Boolean touch(MessageResponse message) {
+		return this.beanstalk.touch(Long.parseLong(message.getHandle()));
+	}
+
+	@Override
 	public void close() {
 		this.beanstalk.close();
 	}

@@ -153,6 +153,18 @@ public class AmazonSQS extends GenericQueue {
 	}
 
 	@Override
+	public Boolean touch(MessageResponse response) {
+		// TODO fix this 60 seconds to something better
+		ChangeMessageVisibilityRequest request = new ChangeMessageVisibilityRequest(this.host, response.getHandle(), 60);
+		try {
+			this.sqs.changeMessageVisibility(request);
+		} catch (Exception e) {
+			return false;
+		}
+		return true;
+	}
+
+	@Override
 	public void close() {
 		this.sqs.shutdown();
 	}
