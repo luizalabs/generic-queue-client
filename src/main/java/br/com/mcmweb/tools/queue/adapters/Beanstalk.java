@@ -22,12 +22,13 @@ public class Beanstalk extends GenericQueue {
 		String[] hostParts = this.getHost().split(":");
 		this.beanstalk = new ClientImpl(hostParts[0], Integer.parseInt(hostParts[1]));
 		this.beanstalk.useTube(this.queueName);
+		this.beanstalk.watch(this.queueName);
 	}
 
 	@Override
 	public String put(Object object) {
 		// TODO conf or parameter
-		long id = this.beanstalk.put(1000, 0, 240, this.serializeMessageBody(object).getBytes());
+		long id = this.beanstalk.put(2048, 0, 240, this.serializeMessageBody(object).getBytes());
 		return Long.toHexString(id);
 	}
 
@@ -42,7 +43,7 @@ public class Beanstalk extends GenericQueue {
 
 	@Override
 	public MessageResponse getNext() {
-		Job job = this.beanstalk.peekReady();
+		Job job = this.beanstalk.reserve(20); // TODO config
 		if (job != null) {
 			String id = Long.toHexString(job.getJobId());
 			String handle = Long.toString(job.getJobId());

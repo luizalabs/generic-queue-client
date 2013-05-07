@@ -27,7 +27,6 @@ public abstract class GenericQueue {
 		this.queueName = queueName;
 		this.mapper = new ObjectMapper();
 		this.mapper.setSerializationInclusion(Inclusion.NON_EMPTY);
-
 	}
 
 	public abstract void connect() throws Exception;

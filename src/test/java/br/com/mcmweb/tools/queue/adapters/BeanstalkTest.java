@@ -39,7 +39,7 @@ public class BeanstalkTest {
 		String id = this.adapter.put(test);
 
 		MessageResponse response = this.adapter.getNext();
-
+//
 		Object myObject = response.getObject();
 		if (myObject == null) {
 			System.out.println("veio não...");
