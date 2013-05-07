@@ -50,12 +50,6 @@ public class AmazonSQS extends GenericQueue {
 		return messageResult.getMessageId();
 	}
 
-	// @Override
-	// public List<String> put(List<Object> object) {
-	// // TODO Auto-generated method stub
-	// return null;
-	// }
-
 	@Override
 	public MessageResponse getNext() {
 		ReceiveMessageRequest receiveRequest = new ReceiveMessageRequest(this.host);
@@ -91,53 +85,6 @@ public class AmazonSQS extends GenericQueue {
 		return true;
 	}
 
-	// @Override
-	// public List<Boolean> delete(List<MessageResponse> responseList) {
-	// List<DeleteMessageBatchRequestEntry> entries = new
-	// ArrayList<DeleteMessageBatchRequestEntry>();
-	// for (MessageResponse response : responseList) {
-	// DeleteMessageBatchRequestEntry entry = new
-	// DeleteMessageBatchRequestEntry();
-	// entry.setId(response.getId());
-	// entry.setReceiptHandle(response.getHandle());
-	// entries.add(entry);
-	// }
-	// DeleteMessageBatchRequest messageRequest = new
-	// DeleteMessageBatchRequest(this.host, entries);
-	// DeleteMessageBatchResult result =
-	// this.sqs.deleteMessageBatch(messageRequest);
-	//
-	// List<Boolean> status = new ArrayList<Boolean>();
-	// List<DeleteMessageBatchResultEntry> successfullList =
-	// result.getSuccessful();
-	// List<BatchResultErrorEntry> failedList = result.getFailed();
-	// for (MessageResponse response : responseList) {
-	// boolean found = false;
-	// for (DeleteMessageBatchResultEntry successfull : successfullList) {
-	// if (successfull.getId().equals(response.getId())) {
-	// found = true;
-	// status.add(true);
-	// continue;
-	// }
-	// }
-	// if (found) {
-	// continue;
-	// }
-	// for (BatchResultErrorEntry failed : failedList) {
-	// if (failed.getId().equals(response.getId())) {
-	// found = true;
-	// status.add(false);
-	// continue;
-	// }
-	// }
-	// if (found) {
-	// continue;
-	// }
-	// }
-	//
-	// return status;
-	// }
-
 	@Override
 	public Boolean release(MessageResponse response, Integer delaySeconds) {
 		if (delaySeconds == null) {
@@ -154,7 +101,7 @@ public class AmazonSQS extends GenericQueue {
 
 	@Override
 	public Boolean touch(MessageResponse response) {
-		// TODO fix this 60 seconds to something better
+		// TODO replace 60 seconds to something better
 		ChangeMessageVisibilityRequest request = new ChangeMessageVisibilityRequest(this.host, response.getHandle(), 60);
 		try {
 			this.sqs.changeMessageVisibility(request);
