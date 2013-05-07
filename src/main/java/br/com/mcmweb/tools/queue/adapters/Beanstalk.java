@@ -32,14 +32,14 @@ public class Beanstalk extends GenericQueue {
 		return Long.toHexString(id);
 	}
 
-	@Override
-	public List<String> put(List<Object> objectList) {
-		List<String> status = new ArrayList<String>();
-		for (Object object : objectList) {
-			status.add(this.put(object));
-		}
-		return status;
-	}
+//	@Override
+//	public List<String> put(List<Object> objectList) {
+//		List<String> status = new ArrayList<String>();
+//		for (Object object : objectList) {
+//			status.add(this.put(object));
+//		}
+//		return status;
+//	}
 
 	@Override
 	public MessageResponse getNext() {
@@ -59,14 +59,14 @@ public class Beanstalk extends GenericQueue {
 		return this.beanstalk.delete(Long.parseLong(message.getHandle()));
 	}
 
-	@Override
-	public List<Boolean> delete(List<MessageResponse> messageList) {
-		List<Boolean> status = new ArrayList<Boolean>();
-		for (MessageResponse message : messageList) {
-			status.add(this.delete(message));
-		}
-		return status;
-	}
+//	@Override
+//	public List<Boolean> delete(List<MessageResponse> messageList) {
+//		List<Boolean> status = new ArrayList<Boolean>();
+//		for (MessageResponse message : messageList) {
+//			status.add(this.delete(message));
+//		}
+//		return status;
+//	}
 
 	@Override
 	public void close() {

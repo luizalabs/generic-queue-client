@@ -33,11 +33,11 @@ public abstract class GenericQueue {
 
 	public abstract String put(Object object);
 
-	public abstract List<String> put(List<Object> object);
+//	public abstract List<String> put(List<Object> object);
 
 	public abstract Boolean delete(MessageResponse response);
 
-	public abstract List<Boolean> delete(List<MessageResponse> response);
+//	public abstract List<Boolean> delete(List<MessageResponse> response);
 
 	public abstract MessageResponse getNext();
 
