@@ -21,6 +21,7 @@ public class Beanstalk extends GenericQueue {
 	public void connect() throws Exception {
 		String[] hostParts = this.getHost().split(":");
 		this.beanstalk = new ClientImpl(hostParts[0], Integer.parseInt(hostParts[1]));
+		this.beanstalk.setUniqueConnectionPerThread(false); // TODO verificar performance...
 		this.beanstalk.useTube(this.queueName);
 		this.beanstalk.watch(this.queueName);
 	}
@@ -36,12 +37,11 @@ public class Beanstalk extends GenericQueue {
 	public MessageResponse getNext() {
 		Job job = this.beanstalk.reserve(20); // TODO config
 		if (job != null) {
-//			System.out.println(this.beanstalk.statsJob(job.getJobId()));
 			String id = Long.toHexString(job.getJobId());
 			String handle = Long.toString(job.getJobId());
 			
 			Map<String, String> stats = this.beanstalk.statsJob(job.getJobId());
-			
+
 			Integer receivedCount = null;
 			try {
 				receivedCount = Integer.parseInt(stats.get("reserves")) - 1;
