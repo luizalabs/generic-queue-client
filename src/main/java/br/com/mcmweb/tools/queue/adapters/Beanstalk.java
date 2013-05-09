@@ -1,7 +1,6 @@
 package br.com.mcmweb.tools.queue.adapters;
 
 import java.util.Map;
-import java.util.UUID;
 
 import br.com.mcmweb.tools.queue.messages.MessageResponse;
 
@@ -30,8 +29,6 @@ public class Beanstalk extends GenericQueue {
 		isTubeSelected.set(false);
 		String[] hostParts = this.getHost().split(":");
 		this.beanstalk = new ClientImpl(hostParts[0], Integer.parseInt(hostParts[1]));
-		// this.beanstalk.setUniqueConnectionPerThread(false); // TODO verificar
-		// performance...
 	}
 
 	private void defineTubeConnection() {
@@ -55,7 +52,7 @@ public class Beanstalk extends GenericQueue {
 		this.defineTubeConnection();
 		Job job = this.beanstalk.reserve(20); // TODO config
 		if (job != null) {
-			String id = UUID.randomUUID().toString();
+			String id = Long.toHexString(job.getJobId());
 			String handle = Long.toString(job.getJobId());
 
 			Map<String, String> stats = this.beanstalk.statsJob(job.getJobId());
