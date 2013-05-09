@@ -1,6 +1,7 @@
 package br.com.mcmweb.tools.queue.adapters;
 
 import java.util.Map;
+import java.util.UUID;
 
 import br.com.mcmweb.tools.queue.messages.MessageResponse;
 
@@ -37,7 +38,7 @@ public class Beanstalk extends GenericQueue {
 	public MessageResponse getNext() {
 		Job job = this.beanstalk.reserve(20); // TODO config
 		if (job != null) {
-			String id = Long.toHexString(job.getJobId());
+			String id = UUID.randomUUID().toString();
 			String handle = Long.toString(job.getJobId());
 			
 			Map<String, String> stats = this.beanstalk.statsJob(job.getJobId());
