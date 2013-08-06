@@ -7,9 +7,13 @@ import br.com.mcmweb.tools.queue.adapters.GenericQueue;
 import br.com.mcmweb.tools.queue.adapters.QueueType;
 
 public class Queue {
+	
+	public static GenericQueue getInstance(String queueTypeName, String host, String login, String password, String queueName) {
+		QueueType queueType = QueueType.valueOf(queueTypeName.toUpperCase());
+		return Queue.getInstance(queueType, host, login, password, queueName);
+	}
 
 	public static GenericQueue getInstance(QueueType queueType, String host, String login, String password, String queueName) {
-
 		try {
 			Constructor<? extends GenericQueue> constructor = queueType.clazz().getDeclaredConstructor(String.class, String.class, String.class, String.class);
 			return constructor.newInstance(host, login, password, queueName);
@@ -32,9 +36,7 @@ public class Queue {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 		return null;
-
 	}
 
 }
