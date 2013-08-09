@@ -1,6 +1,7 @@
 package br.com.mcmweb.tools.queue.adapters;
 
 import java.util.List;
+import java.util.logging.Logger;
 
 import br.com.mcmweb.tools.queue.messages.MessageResponse;
 
@@ -18,6 +19,7 @@ import com.amazonaws.services.sqs.model.SendMessageResult;
 public class AmazonSQS extends GenericQueue {
 
 	private AmazonSQSAsyncClient sqs;
+	private static final Logger logger = Logger.getLogger(AmazonSQS.class.getName());
 
 	/**
 	 * Initialize queue connections
@@ -44,10 +46,17 @@ public class AmazonSQS extends GenericQueue {
 	}
 
 	@Override
-	public String put(Object object) {
+	public boolean put(Object object) {
 		SendMessageRequest messageRequest = new SendMessageRequest(this.host, this.serializeMessageBody(object));
-		SendMessageResult messageResult = this.sqs.sendMessage(messageRequest);
-		return messageResult.getMessageId();
+		try {
+			SendMessageResult messageResult = this.sqs.sendMessage(messageRequest);
+			logger.finest("Added message do Amazon SQS, id " + messageResult.getMessageId());
+			return true;
+		} catch (Exception e) {
+			logger.severe("Error adding message to Amazon SQS");
+			logger.severe(e.getMessage());			
+			return false;
+		}
 	}
 
 	@Override
@@ -64,7 +73,7 @@ public class AmazonSQS extends GenericQueue {
 				try {
 					receivedCount = Integer.parseInt(messageSQS.getAttributes().get("ApproximateReceiveCount"));
 				} catch (Exception e) {
-					// TODO log warning
+					logger.warning("Unable to determine received count: " + e.getMessage());
 				}
 			}
 			MessageResponse response = this.unserializeMessageBody(messageSQS.getMessageId(), messageSQS.getReceiptHandle(), receivedCount, messageSQS.getBody());
@@ -75,7 +84,7 @@ public class AmazonSQS extends GenericQueue {
 	}
 
 	@Override
-	public Boolean delete(MessageResponse message) {
+	public boolean delete(MessageResponse message) {
 		DeleteMessageRequest messageRequest = new DeleteMessageRequest(this.host, message.getHandle());
 		try {
 			this.sqs.deleteMessage(messageRequest);
@@ -86,7 +95,7 @@ public class AmazonSQS extends GenericQueue {
 	}
 
 	@Override
-	public Boolean release(MessageResponse response, Integer delaySeconds) {
+	public boolean release(MessageResponse response, Integer delaySeconds) {
 		if (delaySeconds == null) {
 			delaySeconds = 0;
 		}
@@ -100,7 +109,7 @@ public class AmazonSQS extends GenericQueue {
 	}
 
 	@Override
-	public Boolean touch(MessageResponse response) {
+	public boolean touch(MessageResponse response) {
 		// TODO replace 60 seconds to something better
 		ChangeMessageVisibilityRequest request = new ChangeMessageVisibilityRequest(this.host, response.getHandle(), 60);
 		try {

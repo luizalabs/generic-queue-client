@@ -1,9 +1,9 @@
 package br.com.mcmweb.tools.queue.adapters;
 
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion;
@@ -17,15 +17,20 @@ public abstract class GenericQueue {
 	protected String login;
 	protected String password;
 	protected String queueName;
-	protected ObjectMapper mapper;
+	protected static final ObjectMapper mapper;
+
+	private static final Logger logger = Logger.getLogger(GenericQueue.class.getName());
+
+	static {
+		mapper = new ObjectMapper();
+		mapper.setSerializationInclusion(Inclusion.NON_EMPTY);
+	}
 
 	public GenericQueue(String host, String login, String password, String queueName) throws Exception {
 		this.host = host;
 		this.login = login;
 		this.password = password;
 		this.queueName = queueName;
-		this.mapper = new ObjectMapper();
-		this.mapper.setSerializationInclusion(Inclusion.NON_EMPTY);
 	}
 
 	/**
@@ -41,7 +46,7 @@ public abstract class GenericQueue {
 	 * @param object
 	 * @return
 	 */
-	public abstract String put(Object object);
+	public abstract boolean put(Object object);
 
 	/**
 	 * Remove message from queue
@@ -49,7 +54,7 @@ public abstract class GenericQueue {
 	 * @param response
 	 * @return
 	 */
-	public abstract Boolean delete(MessageResponse response);
+	public abstract boolean delete(MessageResponse response);
 
 	/**
 	 * Release message back to queue, in delaySeconds
@@ -58,7 +63,7 @@ public abstract class GenericQueue {
 	 * @param delaySeconds
 	 * @return
 	 */
-	public abstract Boolean release(MessageResponse response, Integer delaySeconds);
+	public abstract boolean release(MessageResponse response, Integer delaySeconds);
 
 	/**
 	 * Touch queue message to avoid timeouts
@@ -66,7 +71,7 @@ public abstract class GenericQueue {
 	 * @param response
 	 * @return
 	 */
-	public abstract Boolean touch(MessageResponse response);
+	public abstract boolean touch(MessageResponse response);
 
 	/**
 	 * Retrieve next queued message
@@ -122,20 +127,17 @@ public abstract class GenericQueue {
 	protected String serializeMessageBody(Object object) {
 		String fullMessageBody = null;
 		try {
-			String body = this.mapper.writeValueAsString(object);
+			String body = mapper.writeValueAsString(object);
 			MessageRequest messageRequest = new MessageRequest();
 			messageRequest.setType(object.getClass().getCanonicalName());
 			messageRequest.setBody(body);
-			fullMessageBody = this.mapper.writeValueAsString(messageRequest);
+			fullMessageBody = mapper.writeValueAsString(messageRequest);
 		} catch (JsonGenerationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.severe("Unable to generate json: " + e.getMessage());
 		} catch (JsonMappingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.severe("Unable to map json to class: " + e.getMessage());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.severe("I/O Error: " + e.getMessage());
 		}
 		return fullMessageBody;
 	}
@@ -161,18 +163,14 @@ public abstract class GenericQueue {
 				messageResponse.setType(messageRequest.getType());
 				messageResponse.setObject(mapper.readValue(messageRequest.getBody(), Class.forName(messageRequest.getType())));
 				return messageResponse;
-			} catch (JsonParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (JsonGenerationException e) {
+				logger.severe("Unable to generate json: " + e.getMessage());
 			} catch (JsonMappingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.severe("Unable to map json to class: " + e.getMessage());
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.severe("I/O Error: " + e.getMessage());
 			} catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.severe("Unable to unserialize class: " + e.getMessage());
 			}
 		}
 

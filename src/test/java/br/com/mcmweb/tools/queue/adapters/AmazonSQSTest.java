@@ -36,7 +36,7 @@ public class AmazonSQSTest {
 	public void shouldRetrieveObjectFromQueue() {
 		// Add to queue
 		QueueTest test = new QueueTest();
-		String id = this.adapter.put(test);
+		Boolean success = this.adapter.put(test);
 
 		MessageResponse response = this.adapter.getNext();
 

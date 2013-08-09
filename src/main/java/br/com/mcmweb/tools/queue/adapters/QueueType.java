@@ -3,7 +3,8 @@ package br.com.mcmweb.tools.queue.adapters;
 public enum QueueType {
 
 	AMAZON_SQS(AmazonSQS.class), //
-	BEANSTALKD(Beanstalk.class);
+	BEANSTALKD(Beanstalk.class), //
+	RABBITMQ(RabbitMQ.class);
 
 	private Class<? extends GenericQueue> clazz;
 
