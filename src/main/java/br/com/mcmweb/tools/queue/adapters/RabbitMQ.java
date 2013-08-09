@@ -117,10 +117,10 @@ public class RabbitMQ extends GenericQueue {
 	@Override
 	public boolean delete(MessageResponse message) {
 		try {
-			channel.basicAck(Long.parseLong(message.getId()), false);
+			channel.basicAck(Long.parseLong(message.getHandle()), false);
 			return true;
 		} catch (NumberFormatException e) {
-			logger.severe("Unable to parse message id " + message.getId());
+			logger.severe("Unable to parse message id " + message.getHandle());
 		} catch (IOException e) {
 			logger.severe("Unable to delete message. Reason: " + e);
 		}
@@ -130,7 +130,7 @@ public class RabbitMQ extends GenericQueue {
 	@Override
 	public boolean release(MessageResponse message, Integer delaySeconds) {
 		try {
-			long deliveryTag = Long.parseLong(message.getId());
+			long deliveryTag = Long.parseLong(message.getHandle());
 			if (delaySeconds == null || delaySeconds == 0) {
 				try {
 					channel.basicNack(deliveryTag, false, true);
@@ -141,7 +141,7 @@ public class RabbitMQ extends GenericQueue {
 				delayedList.put(deliveryTag, System.currentTimeMillis() + (delaySeconds * 1000));
 			}
 		} catch (NumberFormatException e) {
-			logger.severe("Unable to parse message id " + message.getId());
+			logger.severe("Unable to parse message id " + message.getHandle());
 		}
 		return false;
 	}

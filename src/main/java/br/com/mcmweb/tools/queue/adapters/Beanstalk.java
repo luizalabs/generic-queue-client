@@ -62,7 +62,7 @@ public class Beanstalk extends GenericQueue {
 		Job job = this.beanstalk.reserve(20); // TODO config
 		if (job != null) {
 			String id = Long.toHexString(job.getJobId());
-			String handle = id;
+			String handle = Long.toString(job.getJobId());
 
 			Map<String, String> stats = this.beanstalk.statsJob(job.getJobId());
 
