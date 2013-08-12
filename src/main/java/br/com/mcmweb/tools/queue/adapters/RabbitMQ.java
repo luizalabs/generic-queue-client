@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import br.com.mcmweb.tools.queue.messages.MessageResponse;
 
 import com.rabbitmq.client.Address;
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -43,10 +44,41 @@ public class RabbitMQ extends GenericQueue {
 		this.channel = this.connection.createChannel();
 	}
 
-	private void declareQueue() {
+	/**
+	 * Try to reconnect 5 times
+	 * 
+	 * TODO config?
+	 * 
+	 * @return
+	 */
+	private boolean reconnect() {
+		int tries = 0;
+		this.close();
+		do {
+			try {
+				this.connect();
+				logger.info("Queue connection is up again.");
+				this.isQueueDeclared = false;
+				this.queueDeclare();
+				this.consumer = null;
+				return true;
+			} catch (Exception e1) {
+				tries++;
+				logger.severe("Unable to reach queue! Reason: " + e1.getMessage());
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					// do nothing
+				}
+			}
+		} while (tries < 5);
+		return false;
+	}
+
+	private void queueDeclare() {
 		if (!this.isQueueDeclared) {
 			try {
-				channel.queueDeclare(this.queueName, false, false, false, null);
+				channel.queueDeclare(this.queueName, true, false, false, null);
 				this.isQueueDeclared = true;
 			} catch (IOException e) {
 				logger.severe("Unable to declare queue " + this.queueName);
@@ -56,6 +88,7 @@ public class RabbitMQ extends GenericQueue {
 	}
 
 	private void enableConsumer() {
+		this.queueDeclare();
 		if (this.consumer == null) {
 			this.consumer = new QueueingConsumer(channel);
 			try {
@@ -69,13 +102,28 @@ public class RabbitMQ extends GenericQueue {
 
 	@Override
 	public boolean put(Object object) {
-		this.declareQueue();
+		this.queueDeclare();
 		try {
 			this.channel.basicPublish("", this.queueName, null, this.serializeMessageBody(object).getBytes());
 			return true;
+		} catch (AlreadyClosedException e) {
+			logger.info("Queue channel is closed! Trying to reconnect. Reason: " + e);
+			this.reconnect();
+			try {
+				this.channel.basicPublish("", this.queueName, null, this.serializeMessageBody(object).getBytes());
+				return true;
+			} catch (Exception e1) {
+				logger.severe("Unable to add to queue: " + e);
+			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.info("Queue connection is down! Trying to reconnect. Reason: " + e);
+			this.reconnect();
+			try {
+				this.channel.basicPublish("", this.queueName, null, this.serializeMessageBody(object).getBytes());
+				return true;
+			} catch (Exception e1) {
+				logger.severe("Unable to add to queue: " + e);
+			}
 		}
 		return false;
 	}
@@ -100,9 +148,12 @@ public class RabbitMQ extends GenericQueue {
 				MessageResponse response = this.unserializeMessageBody(id, handle, receivedCount, new String(delivery.getBody()));
 				return response;
 			}
+		} catch (AlreadyClosedException e) {
+			logger.info("Queue channel is closed! Trying to reconnect. Reason: " + e);
+			this.reconnect();
 		} catch (ShutdownSignalException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.info("Queue connection is down! Trying to reconnect. Reason: " + e);
+			this.reconnect();
 		} catch (ConsumerCancelledException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -117,12 +168,35 @@ public class RabbitMQ extends GenericQueue {
 	@Override
 	public boolean delete(MessageResponse message) {
 		try {
-			channel.basicAck(Long.parseLong(message.getHandle()), false);
-			return true;
+			long messageId = Long.parseLong(message.getHandle());
+			try {
+				channel.basicAck(messageId, false);
+				return true;
+			} catch (AlreadyClosedException e) {
+				logger.severe("Unable to delete message. Reason: " + e);
+				if (this.reconnect()) {
+					try {
+						channel.basicAck(messageId, false);
+						return true;
+					} catch (Exception e1) {
+						logger.severe("Unable to delete message. Reason: " + e1);
+					}
+				}
+				return true;
+			} catch (IOException e) {
+				logger.severe("Unable to delete message. Reason: " + e);
+				if (this.reconnect()) {
+					try {
+						channel.basicAck(messageId, false);
+						return true;
+					} catch (Exception e1) {
+						logger.severe("Unable to delete message. Reason: " + e1);
+					}
+				}
+				return true;
+			}
 		} catch (NumberFormatException e) {
 			logger.severe("Unable to parse message id " + message.getHandle());
-		} catch (IOException e) {
-			logger.severe("Unable to delete message. Reason: " + e);
 		}
 		return false;
 	}
@@ -174,15 +248,13 @@ public class RabbitMQ extends GenericQueue {
 	public void close() {
 		try {
 			this.channel.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (Exception e) {
+			logger.info("Unable to close channel: " + e.getMessage());
 		}
 		try {
 			this.connection.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (Exception e) {
+			logger.info("Unable to close connection: " + e.getMessage());
 		}
 	}
 
