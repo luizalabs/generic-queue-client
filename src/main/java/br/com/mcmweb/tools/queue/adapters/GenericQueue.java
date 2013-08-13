@@ -18,6 +18,7 @@ public abstract class GenericQueue {
 	protected String password;
 	protected String queueName;
 	protected static final ObjectMapper mapper;
+	protected static final int CONNECTION_RETRIES = 5;
 
 	private static final Logger logger = Logger.getLogger(GenericQueue.class.getName());
 
@@ -31,6 +32,7 @@ public abstract class GenericQueue {
 		this.login = login;
 		this.password = password;
 		this.queueName = queueName;
+		this.connect();
 	}
 
 	/**
@@ -38,8 +40,28 @@ public abstract class GenericQueue {
 	 * 
 	 * @throws Exception
 	 */
-	public abstract void connect() throws Exception;
+	protected abstract void connect() throws Exception;
 
+	/**
+	 * Reconnect to queue
+	 * 
+	 * @throws Exception
+	 */
+	protected abstract boolean reconnect();
+
+
+	/**
+	 * Generic Reconnect Sleep Timer.
+	 */
+	protected void reconnectSleepTimer() {
+		try {
+			Thread.sleep(300); // TODO parameter
+		} catch (InterruptedException e) {
+			// do nothing
+		}
+	}
+	
+	
 	/**
 	 * Add message to queue
 	 * 

@@ -39,21 +39,22 @@ public class BeanstalkTest {
 		Boolean success = this.adapter.put(test);
 
 		MessageResponse response = this.adapter.getNext();
-		//
-		Object myObject = response.getObject();
-		if (myObject == null) {
-			System.out.println("veio não...");
-		} else if (myObject instanceof QueueTest) {
-			System.out.println("SHOWWW");
-		} else {
-			System.out.println("fudiô!");
-		}
-
-		// System.out.println(test);
-		if (this.adapter.delete(response)) {
-			System.out.println("Removeu de boa");
-		} else {
-			System.out.println("Falhou remoção");
+		if (response != null) {
+			Object myObject = response.getObject();
+			if (myObject == null) {
+				System.out.println("veio não...");
+			} else if (myObject instanceof QueueTest) {
+				System.out.println("SHOWWW");
+			} else {
+				System.out.println("fudiô!");
+			}
+	
+			// System.out.println(test);
+			if (this.adapter.delete(response)) {
+				System.out.println("Removeu de boa");
+			} else {
+				System.out.println("Falhou remoção");
+			}
 		}
 	}
 

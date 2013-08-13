@@ -10,6 +10,7 @@ public class QueueTest {
 	int myPrimitiveInt;
 	Long myLong;
 	List<String> someList;
+	private long time;
 
 	public QueueTest() {
 		this.setMyString("I AM A STRING! Today is: " + new Date());
@@ -20,6 +21,7 @@ public class QueueTest {
 		someList.add("Second Item");
 		someList.add("Third Item");
 		this.setSomeList(someList);
+		this.setTime(System.currentTimeMillis());
 	}
 
 	public String getMyString() {
@@ -52,6 +54,14 @@ public class QueueTest {
 
 	public void setSomeList(List<String> someList) {
 		this.someList = someList;
+	}
+
+	public long getTime() {
+		return time;
+	}
+
+	public void setTime(long time) {
+		this.time = time;
 	}
 
 }
