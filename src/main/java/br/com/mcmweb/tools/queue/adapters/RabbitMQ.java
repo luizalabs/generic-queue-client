@@ -32,7 +32,6 @@ public class RabbitMQ extends GenericQueue {
 
 	public RabbitMQ(String host, String login, String password, String queueName) throws Exception {
 		super(host, login, password, queueName);
-		this.isConsumer.set(false);
 	}
 
 	@Override
@@ -90,7 +89,7 @@ public class RabbitMQ extends GenericQueue {
 	}
 
 	private void consumerSetup() {
-		if (this.isConsumer == null || !this.isConsumer.get()) {
+		if (this.isConsumer == null || this.isConsumer.get() == null || !this.isConsumer.get()) {
 			if (this.isConsumer == null) {
 				this.isConsumer = new ThreadLocal<Boolean>();
 			}
@@ -114,6 +113,7 @@ public class RabbitMQ extends GenericQueue {
 		try {
 			this.getChannel().basicPublish("", this.queueName, null, this.serializeMessageBody(object).getBytes());
 			logger.finest("Added RabbitMQ message");
+			return true;
 		} catch (AlreadyClosedException e) {
 			if (this.reconnect()) {
 				return this.put(object);
