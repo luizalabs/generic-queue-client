@@ -1,5 +1,6 @@
 package br.com.mcmweb.tools.queue.adapters;
 
+import java.io.IOException;
 import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,15 +24,15 @@ import com.rabbitmq.client.ShutdownSignalException;
 public class RabbitMQ extends GenericQueue {
 
 	private Connection connection;
-	private Channel channel;
-	private QueueingConsumer consumer;
-	private boolean isConsumer = false;
+	private ThreadLocal<Channel> channel = new ThreadLocal<Channel>();
+	private ThreadLocal<QueueingConsumer> consumer = new ThreadLocal<QueueingConsumer>();
+	private ThreadLocal<Boolean> isConsumer = new ThreadLocal<Boolean>();
 	private Map<Long, Long> delayedList = new HashMap<Long, Long>();
-
 	private static final Logger logger = Logger.getLogger(RabbitMQ.class.getName());
 
 	public RabbitMQ(String host, String login, String password, String queueName) throws Exception {
 		super(host, login, password, queueName);
+		this.isConsumer.set(false);
 	}
 
 	@Override
@@ -42,9 +43,6 @@ public class RabbitMQ extends GenericQueue {
 		Address[] addrArr = new Address[] { new Address(hostParts[0], Integer.parseInt(hostParts[1])) };
 
 		this.connection = factory.newConnection(addrArr);
-		this.channel = this.connection.createChannel();
-		this.channel.basicQos(1);
-		this.channel.queueDeclare(this.queueName, true, false, false, null);
 	}
 
 	/**
@@ -73,13 +71,38 @@ public class RabbitMQ extends GenericQueue {
 		return false;
 	}
 
+	private Channel getChannel() {
+		Channel channel = null;
+		try {
+			if (this.channel.get() == null) {
+				channel = this.connection.createChannel();
+				channel.basicQos(1);
+				channel.queueDeclare(this.queueName, true, false, false, null);
+				this.channel.set(channel);
+			} else {
+				channel = this.channel.get();
+			}
+		} catch (IOException e) {
+			logger.severe("Unable to get queue channel. Reason: " + e);
+			this.reconnect();
+		}
+		return channel;
+	}
+
 	private void consumerSetup() {
-		if (!this.isConsumer) {
+		if (this.isConsumer == null || !this.isConsumer.get()) {
+			if (this.isConsumer == null) {
+				this.isConsumer = new ThreadLocal<Boolean>();
+			}
+			if (this.consumer == null) {
+				this.consumer = new ThreadLocal<QueueingConsumer>();
+			}
 			try {
+				Channel channel = this.getChannel();
 				QueueingConsumer newConsumer = new QueueingConsumer(channel);
 				channel.basicConsume(this.queueName, false, newConsumer);
-				this.consumer = newConsumer;
-				this.isConsumer = true;
+				this.consumer.set(newConsumer);
+				this.isConsumer.set(true);
 			} catch (Exception e) {
 				logger.severe("Unable to start consuming queue. Reason: " + e);
 			}
@@ -89,7 +112,7 @@ public class RabbitMQ extends GenericQueue {
 	@Override
 	public boolean put(Object object) {
 		try {
-			channel.basicPublish("", this.queueName, null, this.serializeMessageBody(object).getBytes());
+			this.getChannel().basicPublish("", this.queueName, null, this.serializeMessageBody(object).getBytes());
 			logger.finest("Added RabbitMQ message");
 		} catch (AlreadyClosedException e) {
 			if (this.reconnect()) {
@@ -107,7 +130,7 @@ public class RabbitMQ extends GenericQueue {
 		try {
 			this.consumerSetup();
 			this.releaseDelayed();
-			QueueingConsumer.Delivery delivery = consumer.nextDelivery(20000);
+			QueueingConsumer.Delivery delivery = consumer.get().nextDelivery(20000);
 			if (delivery != null) {
 				String id = Long.toString(delivery.getEnvelope().getDeliveryTag());
 				String handle = id;
@@ -139,7 +162,7 @@ public class RabbitMQ extends GenericQueue {
 		try {
 			long messageId = Long.parseLong(message.getHandle());
 			try {
-				channel.basicAck(messageId, false);
+				this.getChannel().basicAck(messageId, false);
 				return true;
 			} catch (AlreadyClosedException e) {
 				if (this.reconnect()) {
@@ -161,7 +184,7 @@ public class RabbitMQ extends GenericQueue {
 			long deliveryTag = Long.parseLong(message.getHandle());
 			if (delaySeconds == null || delaySeconds == 0) {
 				try {
-					channel.basicNack(deliveryTag, false, true);
+					this.getChannel().basicNack(deliveryTag, false, true);
 					return true;
 				} catch (AlreadyClosedException e) {
 					if (this.reconnect()) {
@@ -186,7 +209,7 @@ public class RabbitMQ extends GenericQueue {
 		for (Entry<Long, Long> delayed : delayedList.entrySet()) {
 			if (delayed.getValue() <= now) {
 				try {
-					channel.basicNack(delayed.getKey(), false, true);
+					this.getChannel().basicNack(delayed.getKey(), false, true);
 					removedList.add(delayed.getKey());
 				} catch (Exception e) {
 					logger.severe("Unable to release message after " + (now - delayed.getValue()) + " ms. Reason: " + e);
@@ -209,7 +232,13 @@ public class RabbitMQ extends GenericQueue {
 	public void close() {
 		if (this.connection != null) {
 			this.connection.abort();
-			this.isConsumer = false;
+			this.channel.set(null);
+			if (this.consumer != null) {
+				this.consumer.set(null);
+			}
+			if (this.isConsumer != null) {
+				this.isConsumer.set(false);
+			}
 		}
 	}
 
