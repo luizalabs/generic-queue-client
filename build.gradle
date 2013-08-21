@@ -1,6 +1,7 @@
 apply plugin: "java"
-apply plugin: 'maven'
+apply plugin: "maven"
 apply plugin: "eclipse"
+apply plugin: "idea"
 
 archivesBaseName = "generic-queue-client-0.1"
 sourceCompatibility = "1.5"
@@ -33,4 +34,9 @@ install {
     }
 }
 
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.7'
+}
+
 defaultTasks 'clean', 'jar'
+
