@@ -1,6 +1,11 @@
+.classpath
+.project
+.settings/*
 *.class
 build/
 .gradle/
 *.iml
 *.ipr
 *.iws
+.idea/
+/bin

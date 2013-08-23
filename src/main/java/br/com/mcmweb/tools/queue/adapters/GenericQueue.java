@@ -49,7 +49,6 @@ public abstract class GenericQueue {
 	 */
 	protected abstract boolean reconnect();
 
-
 	/**
 	 * Generic Reconnect Sleep Timer.
 	 */
@@ -60,8 +59,7 @@ public abstract class GenericQueue {
 			// do nothing
 		}
 	}
-	
-	
+
 	/**
 	 * Add message to queue
 	 * 
