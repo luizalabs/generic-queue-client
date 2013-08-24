@@ -3,6 +3,7 @@
 .settings/*
 *.class
 build/
+out/
 .gradle/
 *.iml
 *.ipr
