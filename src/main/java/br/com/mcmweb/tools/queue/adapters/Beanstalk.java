@@ -15,21 +15,10 @@ public class Beanstalk extends GenericQueue {
 
 	private static final int DEFAULT_PRIORITY = 2048;
 	private ClientImpl beanstalk;
+	private ThreadLocal<Boolean> isProducerTubeSelected;
+	private ThreadLocal<Boolean> isWorkerTubeSelected;
+
 	private static final Logger logger = Logger.getLogger(Beanstalk.class.getName());
-
-	private static final ThreadLocal<Boolean> isProducerTubeSelected = new ThreadLocal<Boolean>() {
-		@Override
-		protected Boolean initialValue() {
-			return false;
-		}
-	};
-
-	private static final ThreadLocal<Boolean> isWorkerTubeSelected = new ThreadLocal<Boolean>() {
-		@Override
-		protected Boolean initialValue() {
-			return false;
-		}
-	};
 
 	public Beanstalk(String host, String login, String password, String tubeName) throws Exception {
 		super(host, login, password, tubeName);
@@ -37,8 +26,16 @@ public class Beanstalk extends GenericQueue {
 
 	@Override
 	public void connect() throws Exception {
-		isProducerTubeSelected.set(false);
-		isWorkerTubeSelected.set(false);
+		if (this.isProducerTubeSelected == null) {
+			this.isProducerTubeSelected = new ThreadLocal<Boolean>();
+		}
+		this.isProducerTubeSelected.set(false);
+
+		if (this.isWorkerTubeSelected == null) {
+			this.isWorkerTubeSelected = new ThreadLocal<Boolean>();
+		}
+		this.isWorkerTubeSelected.set(false);
+
 		String[] hostParts = this.getHost().split(":");
 		this.beanstalk = new ClientImpl(hostParts[0], Integer.parseInt(hostParts[1]));
 	}
@@ -66,28 +63,19 @@ public class Beanstalk extends GenericQueue {
 	}
 
 	private void defineProducerTube() {
-		if (!isProducerTubeSelected.get()) {
+		if (!this.isProducerTubeSelected.get()) {
 			this.beanstalk.useTube(this.queueName);
-			isProducerTubeSelected.set(true);
+			this.isProducerTubeSelected.set(true);
 		}
 	}
 
 	private void defineWorkerTube() {
-		if (!isWorkerTubeSelected.get()) {
+		if (!this.isWorkerTubeSelected.get()) {
 			this.beanstalk.watch(this.queueName);
 			this.beanstalk.ignore("default");
-			isWorkerTubeSelected.set(true);
+			this.isWorkerTubeSelected.set(true);
 		}
 	}
-
-	//
-	// private void defineTubeConnection() {
-	// if (!isTubeSelected.get()) {
-	// this.beanstalk.useTube(this.queueName);
-	// this.beanstalk.watch(this.queueName);
-	// isTubeSelected.set(true);
-	// }
-	// }
 
 	@Override
 	public boolean put(Object object) {
@@ -139,7 +127,6 @@ public class Beanstalk extends GenericQueue {
 	@Override
 	public boolean delete(MessageResponse message) {
 		try {
-			// this.defineTubeConnection();
 			boolean status = this.beanstalk.delete(Long.parseLong(message.getHandle()));
 			return status;
 		} catch (BeanstalkException e) {
@@ -159,7 +146,6 @@ public class Beanstalk extends GenericQueue {
 			delaySeconds = 0;
 		}
 		try {
-			// this.defineTubeConnection();
 			boolean status = this.beanstalk.release(Long.parseLong(message.getHandle()), DEFAULT_PRIORITY, delaySeconds);
 			return status;
 		} catch (BeanstalkException e) {
@@ -176,7 +162,6 @@ public class Beanstalk extends GenericQueue {
 	@Override
 	public boolean touch(MessageResponse message) {
 		try {
-			// this.defineTubeConnection();
 			boolean status = this.beanstalk.touch(Long.parseLong(message.getHandle()));
 			return status;
 		} catch (BeanstalkException e) {
