@@ -26,15 +26,8 @@ public class Beanstalk extends GenericQueue {
 
 	@Override
 	public void connect() throws Exception {
-		if (this.isProducerTubeSelected == null) {
-			this.isProducerTubeSelected = new ThreadLocal<Boolean>();
-		}
-		this.isProducerTubeSelected.set(false);
-
-		if (this.isWorkerTubeSelected == null) {
-			this.isWorkerTubeSelected = new ThreadLocal<Boolean>();
-		}
-		this.isWorkerTubeSelected.set(false);
+		this.isProducerTubeSelected = new ThreadLocal<Boolean>();
+		this.isWorkerTubeSelected = new ThreadLocal<Boolean>();
 
 		String[] hostParts = this.getHost().split(":");
 		this.beanstalk = new ClientImpl(hostParts[0], Integer.parseInt(hostParts[1]));
@@ -63,14 +56,14 @@ public class Beanstalk extends GenericQueue {
 	}
 
 	private void defineProducerTube() {
-		if (!this.isProducerTubeSelected.get()) {
+		if (this.isProducerTubeSelected.get() == null || !this.isProducerTubeSelected.get()) {
 			this.beanstalk.useTube(this.queueName);
 			this.isProducerTubeSelected.set(true);
 		}
 	}
 
 	private void defineWorkerTube() {
-		if (!this.isWorkerTubeSelected.get()) {
+		if (this.isWorkerTubeSelected.get() == null || !this.isWorkerTubeSelected.get()) {
 			this.beanstalk.watch(this.queueName);
 			this.beanstalk.ignore("default");
 			this.isWorkerTubeSelected.set(true);
