@@ -27,7 +27,7 @@ public class RabbitMQ extends GenericQueue {
 	private ThreadLocal<Channel> channel = new ThreadLocal<Channel>();
 	private ThreadLocal<QueueingConsumer> consumer = new ThreadLocal<QueueingConsumer>();
 	private ThreadLocal<Boolean> isConsumer = new ThreadLocal<Boolean>();
-	private Map<Long, Long> delayedList = new HashMap<Long, Long>();
+	private ThreadLocal<Map<Long, Long>> delayedList = new ThreadLocal<Map<Long, Long>>();
 	private static final Logger logger = Logger.getLogger(RabbitMQ.class.getName());
 
 	public RabbitMQ(String host, String login, String password, String queueName) throws Exception {
@@ -53,9 +53,13 @@ public class RabbitMQ extends GenericQueue {
 	protected boolean reconnect() {
 		int retries = 0;
 		do {
-			this.close();
 			try {
-				this.connect();
+				if (this.connection == null || !this.connection.isOpen()) {
+					this.close();
+					this.connect();
+				} else {
+					this.closeChannel();
+				}
 				logger.info("Queue connection is up again.");
 				return true;
 			} catch (ConnectException ce) {
@@ -73,6 +77,9 @@ public class RabbitMQ extends GenericQueue {
 	private Channel getChannel() {
 		Channel channel = null;
 		try {
+			if (this.connection == null) {
+				this.connect();
+			}
 			if (this.channel.get() == null) {
 				channel = this.connection.createChannel();
 				channel.basicQos(1);
@@ -84,11 +91,13 @@ public class RabbitMQ extends GenericQueue {
 		} catch (IOException e) {
 			logger.severe("Unable to get queue channel. Reason: " + e);
 			this.reconnect();
+		} catch (Exception e) {
+			logger.severe("Unable to connect to queue. Reason: " + e);
 		}
 		return channel;
 	}
 
-	private void consumerSetup() {
+	private void consumerSetup() throws IOException {
 		if (this.isConsumer == null || this.isConsumer.get() == null || !this.isConsumer.get()) {
 			if (this.isConsumer == null) {
 				this.isConsumer = new ThreadLocal<Boolean>();
@@ -96,15 +105,11 @@ public class RabbitMQ extends GenericQueue {
 			if (this.consumer == null) {
 				this.consumer = new ThreadLocal<QueueingConsumer>();
 			}
-			try {
-				Channel channel = this.getChannel();
-				QueueingConsumer newConsumer = new QueueingConsumer(channel);
-				channel.basicConsume(this.queueName, false, newConsumer);
-				this.consumer.set(newConsumer);
-				this.isConsumer.set(true);
-			} catch (Exception e) {
-				logger.severe("Unable to start consuming queue. Reason: " + e);
-			}
+			Channel channel = this.getChannel();
+			QueueingConsumer newConsumer = new QueueingConsumer(channel);
+			channel.basicConsume(this.queueName, false, newConsumer);
+			this.consumer.set(newConsumer);
+			this.isConsumer.set(true);
 		}
 	}
 
@@ -153,6 +158,7 @@ public class RabbitMQ extends GenericQueue {
 			this.reconnect();
 		} catch (Exception e) {
 			logger.severe("Unknown error reading RabbitMQ message: " + e);
+			this.reconnectSleepTimer();
 		}
 		return null;
 	}
@@ -195,7 +201,14 @@ public class RabbitMQ extends GenericQueue {
 					logger.severe("Unknown error releasing RabbitMQ message: " + e);
 				}
 			} else {
-				delayedList.put(deliveryTag, System.currentTimeMillis() + (delaySeconds * 1000));
+				Map<Long, Long> jobs = delayedList.get();
+				if (jobs == null) {
+					jobs = new HashMap<Long, Long>();
+					jobs.put(deliveryTag, System.currentTimeMillis() + (delaySeconds * 1000));
+					delayedList.set(jobs);
+				} else {
+					jobs.put(deliveryTag, System.currentTimeMillis() + (delaySeconds * 1000));
+				}
 			}
 		} catch (NumberFormatException e) {
 			logger.severe("Unable to parse message id " + message.getHandle());
@@ -203,21 +216,24 @@ public class RabbitMQ extends GenericQueue {
 		return false;
 	}
 
-	private synchronized void releaseDelayed() {
-		long now = System.currentTimeMillis();
-		List<Long> removedList = new ArrayList<Long>();
-		for (Entry<Long, Long> delayed : delayedList.entrySet()) {
-			if (delayed.getValue() <= now) {
-				try {
-					this.getChannel().basicNack(delayed.getKey(), false, true);
-					removedList.add(delayed.getKey());
-				} catch (Exception e) {
-					logger.severe("Unable to release message after " + (now - delayed.getValue()) + " ms. Reason: " + e);
+	private void releaseDelayed() {
+		Map<Long, Long> jobs = delayedList.get();
+		if (jobs != null) {
+			long now = System.currentTimeMillis();
+			List<Long> removedList = new ArrayList<Long>();
+			for (Entry<Long, Long> job : jobs.entrySet()) {
+				if (job.getValue() <= now) {
+					try {
+						this.getChannel().basicNack(job.getKey(), false, true);
+						removedList.add(job.getKey());
+					} catch (Exception e) {
+						logger.severe("Unable to release message after " + (now - job.getValue()) + " ms. Reason: " + e);
+					}
 				}
 			}
-		}
-		for (Long removedDeliveryTag : removedList) {
-			delayedList.remove(removedDeliveryTag);
+			for (Long removedDeliveryTag : removedList) {
+				jobs.remove(removedDeliveryTag);
+			}
 		}
 	}
 
@@ -232,13 +248,27 @@ public class RabbitMQ extends GenericQueue {
 	public void close() {
 		if (this.connection != null) {
 			this.connection.abort();
-			this.channel.set(null);
-			if (this.consumer != null) {
-				this.consumer.set(null);
+			try {
+				this.closeChannel();
+			} catch (IOException e) {
+				// do nothing
 			}
-			if (this.isConsumer != null) {
-				this.isConsumer.set(false);
+		}
+	}
+
+	public void closeChannel() throws IOException {
+		if (this.channel != null) {
+			Channel currentChannel = this.channel.get();
+			if (currentChannel != null) {
+				this.channel.set(null);
+				currentChannel.close();
 			}
+		}
+		if (this.consumer != null) {
+			this.consumer.set(null);
+		}
+		if (this.isConsumer != null) {
+			this.isConsumer.set(false);
 		}
 	}
 
