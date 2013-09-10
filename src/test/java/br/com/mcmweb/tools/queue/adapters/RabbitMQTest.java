@@ -18,7 +18,7 @@ public class RabbitMQTest {
 		// String secretKey = "ZFKR/QrXjLjY7gcAxo5bCBfVFlIJfo45XhZ3KWwt";
 		String queueName = "ml-queue-test";
 
-		this.adapter = Queue.getInstance(QueueType.RABBITMQ, url, null, null, queueName);
+		this.adapter = Queue.getInstanceByType(QueueType.RABBITMQ, url, null, null, queueName);
 	}
 
 	// @Test

@@ -18,7 +18,7 @@ public class BeanstalkTest {
 		// String secretKey = "ZFKR/QrXjLjY7gcAxo5bCBfVFlIJfo45XhZ3KWwt";
 		String queueName = "ml-queue-test";
 
-		this.adapter = Queue.getInstance(QueueType.BEANSTALKD, url, null, null, queueName);
+		this.adapter = Queue.getInstanceByType(QueueType.BEANSTALKD, url, null, null, queueName);
 	}
 
 	// @Test

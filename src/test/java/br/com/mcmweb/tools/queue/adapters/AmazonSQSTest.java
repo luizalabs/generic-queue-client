@@ -18,7 +18,7 @@ public class AmazonSQSTest {
 		String secretKey = "ZFKR/QrXjLjY7gcAxo5bCBfVFlIJfo45XhZ3KWwt";
 		String queueName = "ml-queue-test";
 
-		this.adapter = Queue.getInstance(QueueType.AMAZON_SQS, url, key, secretKey, queueName);
+		this.adapter = Queue.getInstanceByType(QueueType.AMAZON_SQS, url, key, secretKey, queueName);
 	}
 
 //	@Test
