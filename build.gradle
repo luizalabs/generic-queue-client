@@ -30,7 +30,7 @@ install {
     repositories.mavenInstaller {
     	pom.groupId = 'br.com.mcmweb'
         pom.artifactId = 'generic-queue-client'
-        pom.version = '0.1'
+        pom.version = '0.2'
     }
 }
 
