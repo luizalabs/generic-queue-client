@@ -4,7 +4,6 @@ public class MessageResponse {
 
 	protected String id;
 	protected String handle;
-	protected Integer receivedCount;
 	protected String type;
 	protected Object object;
 
@@ -22,14 +21,6 @@ public class MessageResponse {
 
 	public void setHandle(String handle) {
 		this.handle = handle;
-	}
-
-	public Integer getReceivedCount() {
-		return receivedCount;
-	}
-
-	public void setReceivedCount(Integer receivedCount) {
-		this.receivedCount = receivedCount;
 	}
 
 	public String getType() {

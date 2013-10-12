@@ -1,6 +1,5 @@
 package br.com.mcmweb.tools.queue.adapters;
 
-import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.annotation.PreDestroy;
@@ -96,17 +95,7 @@ public class Beanstalk extends GenericQueue {
 			if (job != null) {
 				String id = Long.toHexString(job.getJobId());
 				String handle = Long.toString(job.getJobId());
-
-				Map<String, String> stats = this.beanstalk.statsJob(job.getJobId());
-
-				Integer receivedCount = null;
-				try {
-					receivedCount = Integer.parseInt(stats.get("reserves")) - 1;
-				} catch (Exception e) {
-					logger.warning("Unable to determine received count: " + e);
-				}
-
-				MessageResponse response = this.unserializeMessageBody(id, handle, receivedCount, new String(job.getData()));
+				MessageResponse response = this.unserializeMessageBody(id, handle, new String(job.getData()));
 				return response;
 			}
 		} catch (BeanstalkException e) {

@@ -163,7 +163,7 @@ public abstract class GenericQueue {
 		return fullMessageBody;
 	}
 
-	protected MessageResponse unserializeMessageBody(String id, String handle, Integer receivedCount, String body) {
+	protected MessageResponse unserializeMessageBody(String id, String handle, String body) {
 		MessageResponse messageResponse = new MessageResponse();
 		messageResponse.setId(id);
 
@@ -172,11 +172,6 @@ public abstract class GenericQueue {
 		} else {
 			messageResponse.setHandle(id);
 		}
-
-		if (receivedCount == null) {
-			receivedCount = 0;
-		}
-		messageResponse.setReceivedCount(receivedCount);
 
 		if (body != null && !"".equals(body)) {
 			try {

@@ -140,14 +140,7 @@ public class RabbitMQ extends GenericQueue {
 				String id = Long.toString(delivery.getEnvelope().getDeliveryTag());
 				String handle = id;
 
-				int receivedCount;
-				if (delivery.getEnvelope().isRedeliver()) {
-					receivedCount = 666; // FIXME :(
-				} else {
-					receivedCount = 0;
-				}
-
-				MessageResponse response = this.unserializeMessageBody(id, handle, receivedCount, new String(delivery.getBody()));
+				MessageResponse response = this.unserializeMessageBody(id, handle, new String(delivery.getBody()));
 				return response;
 			}
 		} catch (InterruptedException e) {

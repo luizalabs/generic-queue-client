@@ -90,15 +90,7 @@ public class AmazonSQS extends GenericQueue {
 			List<Message> messageSQSList = receiveResult.getMessages();
 			if (messageSQSList.size() > 0) {
 				Message messageSQS = messageSQSList.get(0);
-				Integer receivedCount = null;
-				if (messageSQS.getAttributes() != null) {
-					try {
-						receivedCount = Integer.parseInt(messageSQS.getAttributes().get("ApproximateReceiveCount"));
-					} catch (Exception e) {
-						logger.warning("Unable to determine received count: " + e);
-					}
-				}
-				MessageResponse response = this.unserializeMessageBody(messageSQS.getMessageId(), messageSQS.getReceiptHandle(), receivedCount, messageSQS.getBody());
+				MessageResponse response = this.unserializeMessageBody(messageSQS.getMessageId(), messageSQS.getReceiptHandle(), messageSQS.getBody());
 				return response;
 			}
 		} catch (Exception e) {
