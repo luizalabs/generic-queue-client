@@ -25,6 +25,7 @@ public abstract class GenericQueue {
 	static {
 		mapper = new ObjectMapper();
 		mapper.setSerializationInclusion(Inclusion.NON_EMPTY);
+		mapper.setSerializationInclusion(Inclusion.NON_NULL);
 	}
 
 	public GenericQueue(String host, String login, String password, String queueName) throws Exception {
