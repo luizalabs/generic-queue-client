@@ -6,6 +6,8 @@ public class MessageResponse {
 	protected String handle;
 	protected String type;
 	protected Object object;
+	protected Long firstReceiptTimestamp = (long) 0;
+	protected Boolean isRedeliver = false;
 
 	public String getId() {
 		return id;
@@ -37,6 +39,22 @@ public class MessageResponse {
 
 	public void setObject(Object object) {
 		this.object = object;
+	}
+
+	public Long getFirstReceiptTimestamp() {
+		return firstReceiptTimestamp;
+	}
+
+	public void setFirstReceiptTimestamp(Long timestamp) {
+		this.firstReceiptTimestamp = timestamp;
+	}
+
+	public Boolean getIsRedeliver() {
+		return isRedeliver;
+	}
+
+	public void setIsRedeliver(Boolean isRedeliver) {
+		this.isRedeliver = isRedeliver;
 	}
 
 }

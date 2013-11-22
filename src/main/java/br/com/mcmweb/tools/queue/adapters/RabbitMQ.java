@@ -130,6 +130,7 @@ public class RabbitMQ extends GenericQueue {
 		return false;
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public MessageResponse getNext() {
 		try {
@@ -141,6 +142,17 @@ public class RabbitMQ extends GenericQueue {
 				String handle = id;
 
 				MessageResponse response = this.unserializeMessageBody(id, handle, new String(delivery.getBody()));
+
+				Long timestamp = (long) 0;
+				try {
+					timestamp = (long)(delivery.getProperties().getTimestamp().getSeconds());
+				} catch (NumberFormatException nfe) {
+					logger.info("Could not parse RabbitMQ first receive timestamp. Reason: " + nfe);
+				}
+				response.setFirstReceiptTimestamp(timestamp);
+
+				response.setIsRedeliver(delivery.getEnvelope().isRedeliver());
+				
 				return response;
 			}
 		} catch (InterruptedException e) {

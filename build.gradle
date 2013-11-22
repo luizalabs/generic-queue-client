@@ -18,6 +18,7 @@ repositories {
 dependencies {
 	compile "org.codehaus.jackson:jackson-core-asl:1.9.13"
 	compile "org.codehaus.jackson:jackson-mapper-asl:1.9.13"
+  compile "joda-time:joda-time:2.1"
 	compile "com.amazonaws:aws-java-sdk:1.4.1"
 	compile "com.surftools:BeanstalkClient:1.4.6"
 	compile "com.rabbitmq:amqp-client:3.1.4"
@@ -30,7 +31,7 @@ install {
     repositories.mavenInstaller {
     	pom.groupId = 'br.com.mcmweb'
         pom.artifactId = 'generic-queue-client'
-        pom.version = '0.2'
+        pom.version = '0.3'
     }
 }
 
