@@ -9,7 +9,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.joda.time.Instant;
 import org.joda.time.LocalTime;
 
 import br.com.mcmweb.tools.queue.messages.MessageRequest;
@@ -184,13 +183,19 @@ public abstract class GenericQueue {
 		if (body != null && !"".equals(body)) {
 			try {
 				MessageRequest messageRequest = mapper.readValue(body, MessageRequest.class);
+				
+				long age = 0;
+				
+				if (messageRequest.getCreationDate() != null) {
+					LocalTime creation = messageRequest.getCreationDate().toLocalTime();
 
-				LocalTime creation = messageRequest.getCreationDate().toLocalTime();
-				
-				DateTimeZone.setDefault(DateTimeZone.UTC);
-				LocalTime now = DateTime.now().toLocalTime();
-				
-				messageResponse.setAge((long) ((now.getMillisOfDay() - creation.getMillisOfDay()) / 1000));
+					DateTimeZone.setDefault(DateTimeZone.UTC);
+					LocalTime now = DateTime.now().toLocalTime();
+
+					age = (long) ((now.getMillisOfDay() - creation.getMillisOfDay()) / 1000);
+				}
+
+				messageResponse.setAge(age);
 
 				messageResponse.setType(messageRequest.getType());
 				messageResponse.setObject(mapper.readValue(messageRequest.getBody(), Class.forName(messageRequest.getType())));

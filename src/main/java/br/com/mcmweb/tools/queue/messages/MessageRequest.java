@@ -6,7 +6,7 @@ public class MessageRequest {
 
 	protected String type;
 	protected String body;
-	protected DateTime creationDate;
+	protected DateTime creationDate = null;
 
 	public String getType() {
 		return type;
