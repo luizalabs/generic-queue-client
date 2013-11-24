@@ -6,6 +6,9 @@ import java.util.logging.Logger;
 
 import javax.annotation.PreDestroy;
 
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+
 import br.com.mcmweb.tools.queue.messages.MessageResponse;
 
 import com.amazonaws.AmazonServiceException;
@@ -87,6 +90,7 @@ public class AmazonSQS extends GenericQueue {
 
 			ArrayList<String> attributeNames = new ArrayList<String>();
 			attributeNames.add("ApproximateReceiveCount");
+			attributeNames.add("SentTimestamp");
 			receiveRequest.setAttributeNames(attributeNames);
 
 			receiveRequest.setMaxNumberOfMessages(1); // FIXME config or parameter
@@ -96,9 +100,21 @@ public class AmazonSQS extends GenericQueue {
 			if (messageSQSList.size() > 0) {
 				Message messageSQS = messageSQSList.get(0);
 				MessageResponse response = this.unserializeMessageBody(messageSQS.getMessageId(), messageSQS.getReceiptHandle(), messageSQS.getBody());
+				
+				if (response.getAge() == 0) {
+					try {
+						Long creation = Long.parseLong(messageSQS.getAttributes().get("SentTimestamp"));
+	
+						DateTimeZone.setDefault(DateTimeZone.UTC);
+						Long now = (long) DateTime.now().getMillis();
+						
+						response.setAge((long) (now - creation) / 1000);
+					} catch (Exception e) {
+						logger.info("No timestamp sent by AmazonSQS... setting it to zero.");
+					}
+				}
 
 				String receiveCount = messageSQS.getAttributes().get("ApproximateReceiveCount");
-
 				Boolean isRedeliver = false;
 				if (receiveCount != null)
 					isRedeliver = (Integer.parseInt(receiveCount) > 1);
