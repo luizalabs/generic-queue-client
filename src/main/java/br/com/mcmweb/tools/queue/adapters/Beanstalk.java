@@ -97,14 +97,6 @@ public class Beanstalk extends GenericQueue {
 				String handle = Long.toString(job.getJobId());
 				MessageResponse response = this.unserializeMessageBody(id, handle, new String(job.getData()));
 
-				Long timestamp = (long) 0;
-				try {
-					timestamp = Long.parseLong(beanstalk.statsJob(job.getJobId()).get("age"));
-				} catch (NumberFormatException nfe) {
-					logger.info("Could not parse Beanstalkd first receive timestamp. Reason: " + nfe);
-				}
-				response.setFirstReceiptTimestamp(timestamp);
-
 				Boolean isRedeliver = false;
 				try {
 					Integer releaseTimes = Integer.parseInt(beanstalk.statsJob(job.getJobId()).get("releases"));

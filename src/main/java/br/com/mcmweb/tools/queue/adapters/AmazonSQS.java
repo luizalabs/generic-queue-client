@@ -1,13 +1,12 @@
 package br.com.mcmweb.tools.queue.adapters;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
 import javax.annotation.PreDestroy;
 
 import br.com.mcmweb.tools.queue.messages.MessageResponse;
-
-import org.joda.time.DateTime;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.AmazonServiceException.ErrorType;
@@ -85,8 +84,12 @@ public class AmazonSQS extends GenericQueue {
 	public MessageResponse getNext() {
 		try {
 			ReceiveMessageRequest receiveRequest = new ReceiveMessageRequest(this.host);
-			receiveRequest.setMaxNumberOfMessages(1); // FIXME config or
-														// parameter
+
+			ArrayList<String> attributeNames = new ArrayList<String>();
+			attributeNames.add("ApproximateReceiveCount");
+			receiveRequest.setAttributeNames(attributeNames);
+
+			receiveRequest.setMaxNumberOfMessages(1); // FIXME config or parameter
 			ReceiveMessageResult receiveResult = this.sqs.receiveMessage(receiveRequest);
 
 			List<Message> messageSQSList = receiveResult.getMessages();
@@ -94,23 +97,13 @@ public class AmazonSQS extends GenericQueue {
 				Message messageSQS = messageSQSList.get(0);
 				MessageResponse response = this.unserializeMessageBody(messageSQS.getMessageId(), messageSQS.getReceiptHandle(), messageSQS.getBody());
 
-				Long timestamp = (long) 0;
-				try {
-					//AmazonSQS emits this timestamp as epoch in milliseconds
-					Long ApproximateFirstReceiveTimestamp = Long.parseLong(messageSQS.getAttributes().get("ApproximateFirstReceiveTimestamp"));
-					Long epochFromNow = Long.parseLong(DateTime.now().toInstant().toString());
-					timestamp = (epochFromNow - ApproximateFirstReceiveTimestamp) / 1000;
-				} catch (NumberFormatException nfe) {
-					logger.info("Could not parse AmazonSQS first receive timestamp. Reason: " + nfe);
-				}
-				response.setFirstReceiptTimestamp(timestamp);
+				String receiveCount = messageSQS.getAttributes().get("ApproximateReceiveCount");
 
 				Boolean isRedeliver = false;
-				try {
-					isRedeliver = (Integer.parseInt(messageSQS.getAttributes().get("ApproximateReceiveCount")) > 1);
-				} catch (NumberFormatException nfe) {
-					logger.info("Could not parse SQS receive count. Reason: " + nfe);
-				}
+				if (receiveCount != null)
+					isRedeliver = (Integer.parseInt(receiveCount) > 1);
+				else
+					logger.info("No receive count received, metadata not available.");
 				response.setIsRedeliver(isRedeliver);
 
 				return response;

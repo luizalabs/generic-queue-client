@@ -6,7 +6,7 @@ public class MessageResponse {
 	protected String handle;
 	protected String type;
 	protected Object object;
-	protected Long firstReceiptTimestamp = (long) 0;
+	protected Long age = (long) 0;
 	protected Boolean isRedeliver = false;
 
 	public String getId() {
@@ -41,12 +41,12 @@ public class MessageResponse {
 		this.object = object;
 	}
 
-	public Long getFirstReceiptTimestamp() {
-		return firstReceiptTimestamp;
+	public Long getAge() {
+		return age;
 	}
 
-	public void setFirstReceiptTimestamp(Long timestamp) {
-		this.firstReceiptTimestamp = timestamp;
+	public void setAge(Long seconds) {
+		this.age = seconds;
 	}
 
 	public Boolean getIsRedeliver() {

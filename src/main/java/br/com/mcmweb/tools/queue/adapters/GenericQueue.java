@@ -7,6 +7,10 @@ import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize.Inclusion;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.Instant;
+import org.joda.time.LocalTime;
 
 import br.com.mcmweb.tools.queue.messages.MessageRequest;
 import br.com.mcmweb.tools.queue.messages.MessageResponse;
@@ -152,6 +156,10 @@ public abstract class GenericQueue {
 			MessageRequest messageRequest = new MessageRequest();
 			messageRequest.setType(object.getClass().getCanonicalName());
 			messageRequest.setBody(body);
+
+			DateTimeZone.setDefault(DateTimeZone.UTC);
+			messageRequest.setCreationDate(DateTime.now());
+
 			fullMessageBody = mapper.writeValueAsString(messageRequest);
 		} catch (JsonGenerationException e) {
 			logger.severe("Unable to generate json: " + e.getMessage());
@@ -176,6 +184,14 @@ public abstract class GenericQueue {
 		if (body != null && !"".equals(body)) {
 			try {
 				MessageRequest messageRequest = mapper.readValue(body, MessageRequest.class);
+
+				LocalTime creation = messageRequest.getCreationDate().toLocalTime();
+				
+				DateTimeZone.setDefault(DateTimeZone.UTC);
+				LocalTime now = DateTime.now().toLocalTime();
+				
+				messageResponse.setAge((long) ((now.getMillisOfDay() - creation.getMillisOfDay()) / 1000));
+
 				messageResponse.setType(messageRequest.getType());
 				messageResponse.setObject(mapper.readValue(messageRequest.getBody(), Class.forName(messageRequest.getType())));
 				return messageResponse;
