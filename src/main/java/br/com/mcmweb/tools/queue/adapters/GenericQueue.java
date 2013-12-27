@@ -183,9 +183,9 @@ public abstract class GenericQueue {
 		if (body != null && !"".equals(body)) {
 			try {
 				MessageRequest messageRequest = mapper.readValue(body, MessageRequest.class);
-				
+
 				long age = 0;
-				
+
 				if (messageRequest.getCreationDate() != null) {
 					LocalTime creation = messageRequest.getCreationDate().toLocalTime();
 
@@ -198,7 +198,15 @@ public abstract class GenericQueue {
 				messageResponse.setAge(age);
 
 				messageResponse.setType(messageRequest.getType());
-				messageResponse.setObject(mapper.readValue(messageRequest.getBody(), Class.forName(messageRequest.getType())));
+
+
+				if (mapper.reader().readTree(messageRequest.getBody()).get("@class") != null) {
+					String className = mapper.reader().readTree(messageRequest.getBody()).get("@class").toString().replace("\"", "");
+					messageResponse.setObject(mapper.reader().withType(Class.forName(className)).readValue(messageRequest.getBody()));
+				} else {
+					messageResponse.setObject(mapper.readValue(messageRequest.getBody(), Class.forName(messageRequest.getType())));
+				}
+
 				return messageResponse;
 			} catch (JsonGenerationException e) {
 				logger.severe("Unable to generate json: " + e.getMessage());
