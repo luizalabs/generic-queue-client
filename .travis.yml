@@ -3,7 +3,12 @@ jdk:
   - openjdk6
   - openjdk7
   - oraclejdk7
+before_script:
+  - curl -L https://github.com/kr/beanstalkd/archive/v1.9.tar.gz | tar xz -C /tmp
+  - cd /tmp/beanstalkd-1.9/
+  - make
+  - ./beanstalkd &
+  - cd $TRAVIS_BUILD_DIR
 services:
-  - beanstalkd
   - rabbitmq
 
