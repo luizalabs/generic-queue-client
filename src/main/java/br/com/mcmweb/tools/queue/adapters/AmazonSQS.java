@@ -77,7 +77,6 @@ public class AmazonSQS extends GenericQueue {
 				logger.info("Retrying SQS put Command! Reason: " + e);
 			} catch (Exception e) {
 				logger.severe("Error adding message to Amazon SQS: " + e);
-				break;
 			}
 		} while (retries < CONNECTION_RETRIES);
 		return false;
@@ -149,7 +148,6 @@ public class AmazonSQS extends GenericQueue {
 				logger.info("Retrying SQS Delete Command! Reason: " + e);
 			} catch (Exception e) {
 				logger.severe("Error deleting SQS message: " + e);
-				break;
 			}
 		} while (retries < CONNECTION_RETRIES);
 		return false;
@@ -176,7 +174,6 @@ public class AmazonSQS extends GenericQueue {
 				logger.info("Retrying SQS Release Command! Reason: " + e);
 			} catch (Exception e) {
 				logger.severe("Error releasing SQS message: " + e);
-				break;
 			}
 		} while (retries < CONNECTION_RETRIES);
 		return false;
@@ -201,7 +198,6 @@ public class AmazonSQS extends GenericQueue {
 				logger.info("Retrying SQS Touch Command! Reason: " + e);
 			} catch (Exception e) {
 				logger.severe("Error touching SQS message: " + e);
-				break;
 			}
 		} while (retries < CONNECTION_RETRIES);
 		return false;
