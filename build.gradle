@@ -16,9 +16,8 @@ repositories {
 }
 
 dependencies {
-    compile "com.fasterxml.jackson.core:jackson-databind:2.5.1"
-    compile "com.fasterxml.jackson.core:jackson-annotations:2.5.1"
-    compile "com.fasterxml.jackson.core:jackson-core:2.5.1"
+	compile "org.codehaus.jackson:jackson-core-asl:1.9.13"
+	compile "org.codehaus.jackson:jackson-mapper-asl:1.9.13"
   	compile "joda-time:joda-time:2.1"
 	compile "com.amazonaws:aws-java-sdk:1.9.1"
 	compile "com.surftools:BeanstalkClient:1.4.6"
@@ -32,7 +31,7 @@ install {
     repositories.mavenInstaller {
     	pom.groupId = 'br.com.mcmweb'
         pom.artifactId = 'generic-queue-client'
-        pom.version = '0.6'
+        pom.version = '0.5'
     }
 }
 
